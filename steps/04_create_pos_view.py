@@ -16,6 +16,7 @@ import snowflake.snowpark.functions as F
 
 
 def create_pos_view(session):
+    session.use_database('HOL_DB')
     session.use_schema('HARMONIZED')
     order_detail = session.table("RAW_POS.ORDER_DETAIL").select(F.col("ORDER_DETAIL_ID"), \
                                                                 F.col("LINE_NUMBER"), \
@@ -93,12 +94,15 @@ def create_pos_view(session):
     final_df.create_or_replace_view('POS_FLATTENED_V')
 
 def create_pos_view_stream(session):
+    session.use_database('HOL_DB')
     session.use_schema('HARMONIZED')
     _ = session.sql('CREATE OR REPLACE STREAM POS_FLATTENED_V_STREAM \
                         ON VIEW POS_FLATTENED_V \
                         SHOW_INITIAL_ROWS = TRUE').collect()
 
 def test_pos_view(session):
+    session.use_role('SYSADMIN')
+    session.use_database('HOL_DB')
     session.use_schema('HARMONIZED')
     tv = session.table('POS_FLATTENED_V')
     tv.limit(5).show()
@@ -108,10 +112,10 @@ def test_pos_view(session):
 if __name__ == "__main__":
     # Add the utils package to our path and import the snowpark_utils function
     import os, sys
-    current_dir = os.getcwd()
+    
+    current_dir = os.path.dirname(__file__)
     parent_dir = os.path.dirname(current_dir)
     sys.path.append(parent_dir)
-
     from utils import snowpark_utils
     session = snowpark_utils.get_snowpark_session()
 
